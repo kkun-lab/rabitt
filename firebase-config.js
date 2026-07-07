@@ -10,12 +10,20 @@
 //    - Copia el objeto firebaseConfig que te muestra y pégalo abajo
 // ==========================================================================
 
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "PEGA_AQUI_TU_API_KEY",
-  authDomain: "PEGA_AQUI_TU_PROYECTO.firebaseapp.com",
-  databaseURL: "https://PEGA_AQUI_TU_PROYECTO-default-rtdb.firebaseio.com",
-  projectId: "PEGA_AQUI_TU_PROYECTO",
-  storageBucket: "PEGA_AQUI_TU_PROYECTO.appspot.com",
-  messagingSenderId: "PEGA_AQUI_TU_SENDER_ID",
-  appId: "PEGA_AQUI_TU_APP_ID"
+  apiKey: "AIzaSyBwfm682uwDPQRb0lF61dEaJNuMVi6s0fA",
+  authDomain: "rabitt-8d0b6.firebaseapp.com",
+  projectId: "rabitt-8d0b6",
+  storageBucket: "rabitt-8d0b6.firebasestorage.app",
+  messagingSenderId: "341958786487",
+  appId: "1:341958786487:web:e0a1d6d2e0294068e07c32"
 };
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
