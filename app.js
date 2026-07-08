@@ -233,6 +233,12 @@ function initRoomSync(){
     document.getElementById("videoUrlInput").value = "";
   });
 
+  // accesos rápidos de la barra tipo navegador: abren el sitio en una pestaña nueva
+  // para que cualquiera busque el video y luego pegue el link en la barra de dirección
+  document.querySelectorAll(".quick-link").forEach(btn => {
+    btn.addEventListener("click", () => window.open(btn.dataset.open, "_blank", "noopener"));
+  });
+
   document.getElementById("chatSendBtn").addEventListener("click", () => sendChat(roomRef));
   document.getElementById("chatInput").addEventListener("keydown", e => { if (e.key === "Enter") sendChat(roomRef); });
 
