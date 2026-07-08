@@ -223,6 +223,14 @@ a{ color:var(--accent2); }
   color:var(--text-faint); text-align:center; padding:40px; font-family:var(--font-mono); font-size:13px;
 }
 
+/* capa invisible que absorbe clics/touch de quien no tiene el control, para que no pueda
+   pausar/reproducir el video de forma local haciendo clic directamente sobre él */
+.guest-lock-overlay{
+  position:absolute; inset:0; z-index:10;
+  cursor:default;
+  background:transparent;
+}
+
 .load-bar{
   display:flex; gap:8px; padding:12px 16px; background:var(--surface); border-top:1px solid var(--line);
 }
