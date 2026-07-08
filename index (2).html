@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LIFE35MM</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ PANTALLA: UNIRSE / CREAR SALA ============ -->
+<div id="joinScreen" class="screen">
+  <div class="join-card">
+    <div class="join-card__marquee">
+      <div class="bulbs"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      <h1 class="marquee-title">LIFE IN<br>35MM</h1>
+    </div>
+    <div class="filmstrip"></div>
+    <div class="join-body">
+      <div class="field">
+        <label for="nameInput">Tu nombre</label>
+        <input id="nameInput" type="text" placeholder="¿Cómo te llamamos?" maxlength="24">
+      </div>
+      <div class="field">
+        <label for="codeInput">Código de sala (déjalo vacío para crear una nueva)</label>
+        <input id="codeInput" type="text" placeholder="Ej: MOON-1234" maxlength="20">
+      </div>
+      <div class="btn-row">
+        <button id="joinBtn" class="btn btn-primary">Entrar / Crear sala</button>
+      </div>
+      <p class="hint" id="joinError"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SALA ============ -->
+<div id="roomScreen" class="room">
+  <div class="topbar">
+    <div class="topbar__left">
+      <span class="room-code" id="roomCodeLabel">—</span>
+      <button class="btn btn-ghost" id="copyLinkBtn" style="padding:6px 10px;font-size:12px;">Copiar enlace</button>
+      <span class="viewer-count"><span class="dot"></span><span id="viewerCount">0</span> viendo</span>
+      <span class="host-badge" id="hostBadge"></span>
+    </div>
+    <div class="topbar__right" style="display:flex;align-items:center;gap:10px;">
+      <button class="btn btn-ghost" id="endRoomBtn" style="padding:6px 10px;font-size:12px;color:var(--danger);border-color:var(--danger);display:none;">Finalizar sala</button>
+      <button class="btn btn-ghost" id="leaveBtn" style="padding:6px 10px;font-size:12px;">Salir</button>
+    </div>
+  </div>
+
+  <div class="layout" id="layoutEl">
+    <button class="chat-tab" id="chatToggleTab" title="Ocultar/mostrar chat">›</button>
+    <div class="stage">
+      <div class="player-frame" id="playerFrame">
+        <div class="player-empty">Aún no hay nada cargado.<br>Pega un enlace abajo para empezar la función.</div>
+        <button class="expand-btn" id="theaterBtn" title="Ampliar reproductor">⤢</button>
+      </div>
+      <div class="load-bar">
+        <input id="videoUrlInput" type="text" placeholder="Pega un link: YouTube, Vimeo, ok.ru, archive.org o un .mp4 directo">
+        <button class="btn btn-primary" id="loadVideoBtn">Proyectar</button>
+      </div>
+      <div class="sync-note" id="syncNote"></div>
+    </div>
+
+    <div class="sidebar" id="sidebarPanel">
+      <div class="tabs">
+        <button class="tab active" data-tab="chat">Chat</button>
+        <button class="tab" data-tab="queue">Cola</button>
+        <button class="tab" data-tab="viewers">Sala</button>
+      </div>
+
+      <div class="panel active" id="panel-chat">
+        <div class="chat-log" id="chatLog"></div>
+        <div class="chat-input">
+          <input id="chatInput" type="text" placeholder="Escribe algo...">
+          <button class="btn btn-primary" id="chatSendBtn">Enviar</button>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-queue">
+        <div class="queue-list" id="queueList"></div>
+        <div class="queue-add">
+          <input id="queueUrlInput" type="text" placeholder="Agregar link a la cola">
+          <button class="btn btn-primary" id="queueAddBtn">+</button>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-viewers">
+        <div class="viewers-list" id="viewersList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CONFIRMACIÓN: FINALIZAR SALA ============ -->
+<div class="confirm-overlay" id="endConfirmOverlay">
+  <div class="confirm-card">
+    <h3 style="font-size:20px;margin-bottom:10px;">¿Finalizar la sala?</h3>
+    <p style="font-size:14px;color:var(--text-dim);margin:0 0 20px;">Esto cerrará la sesión de visualización para todas las personas conectadas. No se puede deshacer.</p>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="cancelEndBtn">Cancelar</button>
+      <button class="btn btn-primary" id="confirmEndBtn" style="background:var(--danger);color:#2A0A0A;">Sí, finalizar sala</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ AVISO: SALA FINALIZADA (para todos) ============ -->
+<div class="confirm-overlay" id="roomClosedOverlay">
+  <div class="confirm-card" style="text-align:center;">
+    <h3 style="font-size:20px;margin-bottom:10px;">La función terminó</h3>
+    <p style="font-size:14px;color:var(--text-dim);margin:0;" id="roomClosedMsg">El anfitrión finalizó la sala.</p>
+    <p class="hint" style="margin-top:16px;">Volviendo al inicio…</p>
+  </div>
+</div>
+
+<!-- Firebase (compat, funciona sin build tools — ideal para Neocities/GitHub Pages) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<!-- YouTube IFrame API (para sincronización exacta de play/pausa/segundo) -->
+<script src="https://www.youtube.com/iframe_api"></script>
+
+<div id="configErrorBanner" style="display:none;"></div>
+<script src="firebase-config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
