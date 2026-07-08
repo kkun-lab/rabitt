@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LIFE35MM</title>
+<title>Sala de Proyección</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -16,7 +16,8 @@
   <div class="join-card">
     <div class="join-card__marquee">
       <div class="bulbs"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
-      <h1 class="marquee-title">LIFE IN<br>35MM</h1>
+      <h1 class="marquee-title">SALA DE<br>PROYECCIÓN</h1>
+      <p class="marquee-sub">Ver algo juntos, donde sea</p>
     </div>
     <div class="filmstrip"></div>
     <div class="join-body">
@@ -26,7 +27,7 @@
       </div>
       <div class="field">
         <label for="codeInput">Código de sala (déjalo vacío para crear una nueva)</label>
-        <input id="codeInput" type="text" placeholder="Ej: MOON-1234" maxlength="20">
+        <input id="codeInput" type="text" placeholder="Ej: LUNA-4821" maxlength="20">
       </div>
       <div class="btn-row">
         <button id="joinBtn" class="btn btn-primary">Entrar / Crear sala</button>
@@ -58,9 +59,18 @@
         <div class="player-empty">Aún no hay nada cargado.<br>Pega un enlace abajo para empezar la función.</div>
         <button class="expand-btn" id="theaterBtn" title="Ampliar reproductor">⤢</button>
       </div>
-      <div class="load-bar">
-        <input id="videoUrlInput" type="text" placeholder="Pega un link: YouTube, Vimeo, ok.ru, archive.org o un .mp4 directo">
-        <button class="btn btn-primary" id="loadVideoBtn">Proyectar</button>
+      <div class="browser-toolbar">
+        <div class="toolbar-dots"><span></span><span></span><span></span></div>
+        <div class="quick-links">
+          <button type="button" class="quick-link" data-open="https://www.youtube.com" title="Abrir YouTube en una pestaña nueva">▶ YouTube</button>
+          <button type="button" class="quick-link" data-open="https://vimeo.com" title="Abrir Vimeo en una pestaña nueva">🎬 Vimeo</button>
+          <button type="button" class="quick-link" data-open="https://ok.ru" title="Abrir ok.ru en una pestaña nueva">🎥 ok.ru</button>
+        </div>
+        <div class="address-bar">
+          <span class="address-bar__lock" aria-hidden="true">🔒</span>
+          <input id="videoUrlInput" type="text" placeholder="Pega aquí el link: YouTube, Vimeo, ok.ru, archive.org o un .mp4 directo">
+          <button class="btn btn-primary" id="loadVideoBtn">Ir</button>
+        </div>
       </div>
       <div class="sync-note" id="syncNote"></div>
     </div>
@@ -121,6 +131,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <!-- YouTube IFrame API (para sincronización exacta de play/pausa/segundo) -->
 <script src="https://www.youtube.com/iframe_api"></script>
+<!-- Vimeo Player SDK (para sincronización exacta de play/pausa/segundo en videos de Vimeo) -->
+<script src="https://player.vimeo.com/api/player.js"></script>
 
 <div id="configErrorBanner" style="display:none;"></div>
 <script src="firebase-config.js"></script>
