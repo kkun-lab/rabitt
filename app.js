@@ -54,7 +54,8 @@ let clientId = sessionStorage.getItem("sp_clientId") || cryptoRandomId();
 sessionStorage.setItem("sp_clientId", clientId);
 
 let ytPlayer = null;          // instancia del reproductor de YouTube
-let currentVideoType = null;  // 'youtube' | 'file' | 'iframe'
+let vimeoPlayer = null;       // instancia del reproductor de Vimeo (Vimeo Player SDK)
+let currentVideoType = null;  // 'youtube' | 'vimeo' | 'file' | 'iframe'
 let currentVideoData = null;  // último objeto de video recibido (para reconstruir el reproductor)
 let applyingRemote = false;   // evita bucles al aplicar cambios remotos
 let ytReady = false;
@@ -69,7 +70,7 @@ function cryptoRandomId(){
 }
 
 function generateRoomCode(){
-  const words = ["GERWIG","CAMPION","VARDA","BIGELOW","DUVERNAY","COPPOLA","CHIAO","HANSEN-LØVE","HAMSTAD","REINHARDT","DENIS","RAMSAY","SCIAMMA","HAR'EL","ZHAO","HOGAN","MAKHMALBAF","MESSINA","ROTWANG","MARSHALL"];
+  const words = ["LUNA","SOL","RIO","MONTE","NIEVE","FUEGO","ROCA","VIENTO","MAR","CIELO"];
   const w = words[Math.floor(Math.random()*words.length)];
   const n = Math.floor(1000 + Math.random()*9000);
   return `${w}-${n}`;
@@ -84,8 +85,10 @@ function parseVideoUrl(raw){
   const yt = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
   if (yt) return { type:"youtube", id: yt[1], embedUrl:null, raw:url };
 
+  // Vimeo tiene API oficial de control (Vimeo Player SDK), así que va como tipo propio
+  // con sincronización exacta — no como "iframe" genérico sin control.
   const vimeo = url.match(/vimeo\.com\/(?:.*\/)?(\d+)/);
-  if (vimeo) return { type:"iframe", id:vimeo[1], embedUrl:`https://player.vimeo.com/video/${vimeo[1]}`, raw:url };
+  if (vimeo) return { type:"vimeo", id:vimeo[1], embedUrl:null, raw:url };
 
   const okru = url.match(/ok\.ru\/(?:video|live)\/(\d+)/);
   if (okru) return { type:"iframe", id:okru[1], embedUrl:`https://ok.ru/videoembed/${okru[1]}`, raw:url };
@@ -431,6 +434,7 @@ function buildPlayer(video){
   frame.appendChild(expandBtn); // se conserva al reconstruir el reproductor
   currentVideoType = video.type;
   ytPlayer = null;
+  vimeoPlayer = null;
 
   if (video.type === "youtube"){
     syncNote.textContent = isHost
@@ -456,6 +460,36 @@ function buildPlayer(video){
       });
     };
     if (ytReady) create(); else window.__pendingYtCreate = create;
+
+  } else if (video.type === "vimeo"){
+    syncNote.textContent = isHost
+      ? "Sincronización: exacta — tienes el control (play, pausa y segundo se comparten con todos)."
+      : "Sincronización: exacta — solo quien tiene el control puede reproducir, pausar o adelantar.";
+    const iframe = document.createElement("iframe");
+    iframe.id = "vimeoPlayerEl";
+    // controls=0 para invitados: solo quien tiene el control ve los botones nativos de Vimeo
+    iframe.src = `https://player.vimeo.com/video/${video.id}?api=1&controls=${isHost ? 1 : 0}`;
+    iframe.allow = "autoplay; fullscreen; picture-in-picture";
+    iframe.allowFullscreen = true;
+    frame.insertBefore(iframe, expandBtn);
+
+    vimeoPlayer = new Vimeo.Player(iframe);
+    pendingVideoAfterYtReady = lastPlaybackState; // resincroniza al (re)crear el reproductor
+
+    vimeoPlayer.ready().then(() => {
+      if (pendingVideoAfterYtReady){ applyRemotePlayback(pendingVideoAfterYtReady); pendingVideoAfterYtReady = null; }
+    }).catch(() => {
+      syncNote.textContent = "⚠ No se pudo inicializar el reproductor de Vimeo (puede que el video tenga la privacidad configurada para no permitir incrustarlo en otros sitios).";
+    });
+
+    if (isHost){
+      vimeoPlayer.on("play", () => { if (!applyingRemote) writeLocalPlayback(true); });
+      vimeoPlayer.on("pause", () => { if (!applyingRemote) writeLocalPlayback(false); });
+      vimeoPlayer.on("seeked", () => {
+        if (applyingRemote) return;
+        vimeoPlayer.getPaused().then(paused => writeLocalPlayback(!paused));
+      });
+    }
 
   } else if (video.type === "file"){
     syncNote.textContent = isHost
@@ -485,6 +519,17 @@ function buildPlayer(video){
     iframe.allowFullscreen = true;
     frame.insertBefore(iframe, expandBtn);
   }
+
+  // Bloqueo de clics para quien NO tiene el control: en youtube y vimeo, un clic sobre
+  // el video reproduce/pausa localmente aunque los controles estén ocultos (comportamiento
+  // propio de esos reproductores). Esta capa transparente absorbe el clic para que solo
+  // el anfitrión pueda tocar play/pausa/segundo, y así nadie desincroniza su propia vista.
+  if (!isHost && (video.type === "youtube" || video.type === "vimeo" || video.type === "file")){
+    const lock = document.createElement("div");
+    lock.className = "guest-lock-overlay";
+    lock.title = "Solo quien tiene el control puede reproducir, pausar o adelantar";
+    frame.insertBefore(lock, expandBtn);
+  }
 }
 
 function onYtStateChange(e){
@@ -495,12 +540,24 @@ function onYtStateChange(e){
 
 function writeLocalPlayback(isPlaying){
   if (!window.__roomRef || !isHost) return;
+
+  // Vimeo Player SDK es asíncrono (getCurrentTime devuelve una promesa),
+  // así que ese caso se resuelve aparte y comparte la misma función de escritura.
+  if (currentVideoType === "vimeo" && vimeoPlayer){
+    vimeoPlayer.getCurrentTime().then(time => pushPlayback(isPlaying, time)).catch(() => pushPlayback(isPlaying, 0));
+    return;
+  }
+
   let time = 0;
   if (currentVideoType === "youtube" && ytPlayer && ytPlayer.getCurrentTime) time = ytPlayer.getCurrentTime();
   if (currentVideoType === "file"){
     const v = document.getElementById("filePlayerEl");
     if (v) time = v.currentTime;
   }
+  pushPlayback(isPlaying, time);
+}
+
+function pushPlayback(isPlaying, time){
   window.__roomRef.child("playback").set({
     isPlaying, time, updatedAt: firebase.database.ServerValue.TIMESTAMP
   });
@@ -519,6 +576,16 @@ function applyRemotePlayback(p){
       if (Math.abs(v.currentTime - p.time) > 1.5) v.currentTime = p.time;
       if (p.isPlaying) v.play().catch(()=>{}); else v.pause();
     }
+  } else if (currentVideoType === "vimeo"){
+    if (!vimeoPlayer){ pendingVideoAfterYtReady = p; applyingRemote = false; return; }
+    vimeoPlayer.getCurrentTime().then(current => {
+      const drift = Math.abs(current - p.time);
+      const seek = drift > 1.5 ? vimeoPlayer.setCurrentTime(p.time) : Promise.resolve();
+      seek.then(() => {
+        if (p.isPlaying) vimeoPlayer.play().catch(()=>{});
+        else vimeoPlayer.pause().catch(()=>{});
+      }).catch(()=>{});
+    }).catch(()=>{});
   }
   setTimeout(() => applyingRemote = false, 300);
 }
