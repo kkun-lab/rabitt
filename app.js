@@ -69,7 +69,7 @@ function cryptoRandomId(){
 }
 
 function generateRoomCode(){
-  const words = ["LUNA","SOL","RIO","MONTE","NIEVE","FUEGO","ROCA","VIENTO","MAR","CIELO"];
+  const words = ["GERWIG","CAMPION","VARDA","BIGELOW","DUVERNAY","COPPOLA","CHIAO","HANSEN-LØVE","HAMSTAD","REINHARDT","DENIS","RAMSAY","SCIAMMA","HAR'EL","ZHAO","HOGAN","MAKHMALBAF","MESSINA","ROTWANG","MARSHALL"];
   const w = words[Math.floor(Math.random()*words.length)];
   const n = Math.floor(1000 + Math.random()*9000);
   return `${w}-${n}`;
